@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Gọi Món Cao Cấp - Thanh Toán</title>
+    <style>
+        /* === RESET & BỐ CỤC CHÍNH === */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #e9ecef; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .app-container {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            max-width: 1100px;
+            height: 85vh;
+            gap: 20px;
+        }
+
+        /* === CỘT TRÁI: KHUNG CHAT === */
+        .chat-panel {
+            flex: 2;
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .header {
+            background-color: #0069d9;
+            color: white;
+            padding: 18px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .chat-history {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background-color: #f8f9fa;
+        }
+        .message {
+            padding: 12px 18px;
+            border-radius: 15px;
+            line-height: 1.5;
+            max-width: 85%;
+            font-size: 15px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .bot { background-color: #e3f2fd; color: #0d47a1; align-self: flex-start; border-bottom-left-radius: 3px; }
+        .user { background-color: #d1e7dd; color: #0f5132; align-self: flex-end; border-bottom-right-radius: 3px; }
+
+        /* KHU VỰC NHẬP TÊN & NÚT BẤM */
+        .input-group {
+            display: flex;
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #dee2e6;
+        }
+        .input-group input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+        }
+        .send-btn {
+            padding: 12px 25px;
+            margin-left: 10px;
+            background-color: #0069d9;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .send-btn:hover { background-color: #0056b3; }
+
+        /* LƯỚI NÚT MENU */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            width: 100%;
+            margin-top: 5px;
+        }
+        .menu-btn {
+            padding: 12px 10px;
+            background-color: #fd7e14;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+            line-height: 1.4;
+        }
+        .menu-btn small { font-size: 13px; color: #fff3cd; font-weight: normal; display: block; margin-top: 4px; }
+        .menu-btn:hover { background-color: #e85e00; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(253,126,20,0.3); }
+        .btn-item { background-color: #17a2b8; }
+        .btn-item:hover { background-color: #138496; }
+        .btn-back { background-color: #6c757d; }
+        .btn-back:hover { background-color: #5a6268; }
+        .btn-checkout { background-color: #198754; grid-column: 1 / -1; font-size: 16px; padding: 15px; }
+        .btn-checkout:hover { background-color: #157347; }
+        
+        /* Màu nút thanh toán */
+        .btn-cash { background-color: #28a745; }
+        .btn-qr { background-color: #6f42c1; }
+
+        /* === CỘT PHẢI: GIỎ HÀNG (CART) === */
+        .cart-panel {
+            flex: 1;
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 320px;
+        }
+        .cart-header {
+            background-color: #ffc107;
+            color: #856404;
+            padding: 18px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .cart-items {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        /* Phân loại giỏ hàng */
+        .cart-category { margin-bottom: 10px; }
+        .cart-cat-title {
+            font-weight: bold;
+            color: #495057;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .cart-item-name { font-weight: 500; }
+        .cart-item-price { color: #dc3545; font-size: 13px; font-weight: 600; margin-top: 3px; }
+        .cart-item-qty { background: #0069d9; color: white; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .empty-cart { text-align: center; color: #adb5bd; margin-top: 50px; font-style: italic; }
+        
+        /* Tổng tiền */
+        .cart-total-box {
+            padding: 15px 20px;
+            background-color: #f8f9fa;
+            border-top: 2px dashed #dee2e6;
+            display: flex;
+            flex-direction: column; /* Đổi sang dọc để hiển thị thuế */
+            gap: 8px;
+            color: #212529;
+        }
+        .cart-total-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .cart-final-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: bold;
+            border-top: 1px solid #dee2e6;
+            padding-top: 10px;
+            margin-top: 5px;
+        }
+        .total-price { color: #dc3545; }
+
+        /* MÃ PHIẾU CHỜ & QR CODE */
+        .ticket-box {
+            background-color: #fff3cd;
+            border: 2px dashed #ffc107;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px;
+            color: #856404;
+            width: 100%;
+        }
+        .qr-box {
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .qr-box img {
+            width: 150px;
+            height: 150px;
+            margin-bottom: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            padding: 5px;
+        }
+
+        /* === ĐÁP ỨNG CHO ĐIỆN THOẠI === */
+        @media (max-width: 850px) {
+            .app-container { flex-direction: column; height: 100vh; gap: 15px; }
+            .chat-panel { height: 55vh; flex: none; }
+            .cart-panel { height: auto; flex: 1; }
+            body { padding: 10px; background-color: #ffffff; }
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="chat-panel">
+        <div class="header">👨‍🍳 Ẩm Thực Bot</div>
+        <div class="chat-history" id="chat">
+            <div class="message bot">Xin chào! Chào mừng bạn đến với nhà hàng. Vui lòng nhập tên của bạn để bot phục vụ nhé!</div>
+        </div>
+        
+        <div class="input-group" id="inputArea">
+            <input type="text" id="userName" placeholder="Nhập tên của bạn..." onkeypress="handleKeyPress(event)">
+            <button class="send-btn" onclick="startChat()">Bắt đầu</button>
+        </div>
+    </div>
+
+    <div class="cart-panel">
+        <div class="cart-header">🛒 Khay Đồ Đã Chọn</div>
+        <div class="cart-items" id="cartItems">
+            <div class="empty-cart">Khay đồ ăn của bạn đang trống.<br>Hãy chọn món ở khung chat nhé!</div>
+        </div>
+        <div class="cart-total-box" id="cartTotalBox" style="display: none;">
+            <div class="cart-total-row">
+                <span>Tạm tính:</span>
+                <span id="cartSubtotalText">0đ</span>
+            </div>
+            <div class="cart-total-row">
+                <span>Thuế VAT (10%):</span>
+                <span id="cartVatText">0đ</span>
+            </div>
+            <div class="cart-final-row">
+                <span>Tổng cộng:</span>
+                <span class="total-price" id="cartTotalText">0đ</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let customerName = "";
+    let orderCart = {}; 
+    const VAT_RATE = 0.10; // Đặt Thuế VAT là 10%
+
+    // THỰC ĐƠN
+    const menuData = {
+        'food': { 
+            title: 'Đồ ăn chính', icon: '🍔',
+            items: [
+                { name: 'Mì Ý thịt bằm', price: 45000 }, { name: 'Cơm tấm sườn bì chả', price: 55000 },
+                { name: 'Phở bò Kobe', price: 85000 }, { name: 'Bánh mì chảo', price: 40000 },
+                { name: 'Pizza Hải sản', price: 120000 }, { name: 'Sushi cá hồi', price: 95000 }
+            ] 
+        },
+        'drink': { 
+            title: 'Đồ uống', icon: '🥤',
+            items: [
+                { name: 'Cà phê muối', price: 25000 }, { name: 'Trà đào cam sả', price: 30000 },
+                { name: 'Trà sữa trân châu', price: 35000 }, { name: 'Nước ép dưa hấu', price: 25000 },
+                { name: 'Mojito chanh', price: 45000 }
+            ] 
+        },
+        'dessert': { 
+            title: 'Tráng miệng', icon: '🍰',
+            items: [
+                { name: 'Bánh Flan caramel', price: 15000 }, { name: 'Kem bơ dừa', price: 25000 },
+                { name: 'Tiramisu', price: 40000 }, { name: 'Chè bưởi', price: 20000 }
+            ] 
+        }
+    };
+
+    function formatMoney(amount) {
+        return amount.toLocaleString('vi-VN') + 'đ';
+    }
+
+    // Các hàm tính toán tiền
+    function getSubtotal() {
+        let total = 0;
+        for (const item in orderCart) {
+            total += orderCart[item].price * orderCart[item].qty;
+        }
+        return total;
+    }
+
+    function getVatAmount() {
+        return getSubtotal() * VAT_RATE;
+    }
+
+    function getTotalAmount() {
+        return getSubtotal() + getVatAmount();
+    }
+
+    const chat = document.getElementById("chat");
+    const cartContainer = document.getElementById("cartItems");
+    const cartTotalBox = document.getElementById("cartTotalBox");
+    const cartTotalText = document.getElementById("cartTotalText");
+
+    function scrollToBottom() { chat.scrollTop = chat.scrollHeight; }
+
+    function addMessage(sender, text) {
+        const div = document.createElement('div');
+        div.className = `message ${sender}`;
+        div.innerHTML = text;
+        chat.appendChild(div);
+        scrollToBottom();
+    }
+
+    function handleKeyPress(e) { if (e.key === 'Enter') startChat(); }
+
+    function startChat() {
+        const nameInput = document.getElementById("userName").value.trim();
+        if (!nameInput) return;
+        customerName = nameInput;
+        document.getElementById("inputArea").style.display = "none";
+        
+        addMessage('user', `Tớ tên là ${customerName}`);
+        addMessage('bot', `Chào <b>${customerName}</b>! Dưới đây là các danh mục thực đơn. Bạn muốn chọn loại nào?`);
+        showCategories();
+    }
+
+    function showCategories() {
+        removeButtons();
+        let buttonsHTML = `<div class="menu-grid" id="interactive-buttons">`;
+        for (const key in menuData) {
+            buttonsHTML += `<button class="menu-btn" onclick="showMenu('${key}')">${menuData[key].icon} ${menuData[key].title}</button>`;
+        }
+        if (Object.keys(orderCart).length > 0) {
+            buttonsHTML += `<button class="menu-btn btn-checkout" onclick="askPaymentMethod()">✅ Xác nhận đặt món & Tính tiền</button>`;
+        }
+        buttonsHTML += `</div>`;
+        chat.insertAdjacentHTML('beforeend', buttonsHTML);
+        scrollToBottom();
+    }
+
+    function showMenu(category) {
+        removeButtons();
+        const catData = menuData[category];
+        addMessage('user', `Tớ muốn xem ${catData.title.toLowerCase()}`);
+        addMessage('bot', `Đây là các món ${catData.title.toLowerCase()} kèm giá (chưa bao gồm VAT):`);
+
+        let buttonsHTML = `<div class="menu-grid" id="interactive-buttons">`;
+        catData.items.forEach(item => {
+            buttonsHTML += `<button class="menu-btn btn-item" onclick="addItem('${category}', '${item.name}', ${item.price})">
+                ${item.name}<small>${formatMoney(item.price)}</small></button>`;
+        });
+        buttonsHTML += `<button class="menu-btn btn-back" onclick="showCategories()">🔙 Quay lại</button></div>`;
+        chat.insertAdjacentHTML('beforeend', buttonsHTML);
+        scrollToBottom();
+    }
+
+    function addItem(categoryKey, itemName, itemPrice) {
+        removeButtons();
+        if (orderCart[itemName]) {
+            orderCart[itemName].qty++;
+        } else {
+            orderCart[itemName] = { category: categoryKey, price: itemPrice, qty: 1 };
+        }
+        updateCartUI();
+        addMessage('user', `Cho tớ 1 ${itemName}`);
+        addMessage('bot', `Đã thêm <b>${itemName}</b>. Bạn chọn thêm gì nữa không?`);
+        showCategories();
+    }
+
+    function updateCartUI() {
+        cartContainer.innerHTML = '';
+        const items = Object.keys(orderCart);
+        if (items.length === 0) {
+            cartContainer.innerHTML = `<div class="empty-cart">Khay đồ ăn của bạn đang trống.<br>Hãy chọn món ở khung chat nhé!</div>`;
+            cartTotalBox.style.display = "none";
+            return;
+        }
+
+        for (const catKey in menuData) {
+            let itemsInCategory = items.filter(itemName => orderCart[itemName].category === catKey);
+            if (itemsInCategory.length > 0) {
+                let categoryHTML = `<div class="cart-category"><div class="cart-cat-title">${menuData[catKey].icon} ${menuData[catKey].title}</div>`;
+                itemsInCategory.forEach(itemName => {
+                    const itemData = orderCart[itemName];
+                    categoryHTML += `<div class="cart-item">
+                        <div><div class="cart-item-name">${itemName}</div><div class="cart-item-price">${formatMoney(itemData.price * itemData.qty)}</div></div>
+                        <span class="cart-item-qty">x${itemData.qty}</span></div>`;
+                });
+                categoryHTML += `</div>`;
+                cartContainer.innerHTML += categoryHTML;
+            }
+        }
+        
+        // Cập nhật giá trị hiển thị bao gồm VAT
+        document.getElementById("cartSubtotalText").innerText = formatMoney(getSubtotal());
+        document.getElementById("cartVatText").innerText = formatMoney(getVatAmount());
+        cartTotalText.innerText = formatMoney(getTotalAmount());
+        cartTotalBox.style.display = "flex";
+    }
+
+    // --- BƯỚC MỚI: HỎI PHƯƠNG THỨC THANH TOÁN ---
+    function askPaymentMethod() {
+        removeButtons();
+        addMessage('user', `Tớ chọn xong rồi, tính tiền cho tớ!`);
+        addMessage('bot', `Tuyệt vời! Tổng hoá đơn (đã gồm VAT) của bạn là <b style="color:red">${formatMoney(getTotalAmount())}</b>. Bạn muốn thanh toán bằng hình thức nào?`);
+        
+        let buttonsHTML = `
+            <div class="menu-grid" id="interactive-buttons">
+                <button class="menu-btn btn-cash" onclick="processPayment('cash')">💵 Tiền mặt</button>
+                <button class="menu-btn btn-qr" onclick="processPayment('qr')">📱 Quét mã QR</button>
+                <button class="menu-btn btn-back" onclick="showCategories()">🔙 Chọn thêm món</button>
+            </div>
+        `;
+        chat.insertAdjacentHTML('beforeend', buttonsHTML);
+        scrollToBottom();
+    }
+
+    // --- XỬ LÝ IN PHIẾU THEO PHƯƠNG THỨC THANH TOÁN ---
+    function processPayment(method) {
+        removeButtons();
+        const subtotal = getSubtotal();
+        const vat = getVatAmount();
+        const totalAmount = getTotalAmount();
+        let totalItems = 0;
+        let itemsHTML = '';
+
+        // Generate receipt items
+        for (const catKey in menuData) {
+            let catItems = Object.keys(orderCart).filter(name => orderCart[name].category === catKey);
+            if (catItems.length > 0) {
+                itemsHTML += `<div style="font-weight: bold; margin-top: 10px; color: #495057;">--- ${menuData[catKey].title} ---</div>`;
+                catItems.forEach(name => {
+                    const item = orderCart[name];
+                    totalItems += item.qty;
+                    itemsHTML += `<div style="display: flex; justify-content: space-between;">
+                        <span>${name} (x${item.qty})</span>
+                        <span>${formatMoney(item.price * item.qty)}</span>
+                    </div>`;
+                });
+            }
+        }
+
+        // Tạo UI cho phương thức thanh toán
+        let methodChoiceText = method === 'cash' ? "Tiền mặt" : "Mã QR";
+        let paymentInstructionUI = '';
+
+        if (method === 'qr') {
+            paymentInstructionUI = `
+                <div class="qr-box">
+                    <p style="font-weight: bold; color: #6f42c1; margin-bottom: 5px;">MÃ QR THANH TOÁN (DEMO)</p>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=DemoThanhToan_KhongMatTien" alt="Mã QR Fake">
+                    <p style="font-size: 13px; color: #555;">Vui lòng mở ứng dụng ngân hàng và quét mã trên để thanh toán.</p>
+                </div>
+            `;
+        } else {
+            paymentInstructionUI = `
+                <div style="margin: 15px 0; padding: 10px; background: #d4edda; color: #155724; border-radius: 8px; border: 1px solid #c3e6cb;">
+                    💵 <strong>Thanh toán bằng Tiền Mặt</strong><br>
+                    Bạn vui lòng chuẩn bị sẵn <strong style="color:red">${formatMoney(totalAmount)}</strong> để thanh toán tại quầy nhé!
+                </div>
+            `;
+        }
+
+        addMessage('user', `Tớ thanh toán bằng ${methodChoiceText}`);
+        
+        const ticketNum = Math.floor(Math.random() * 900) + 100;
+        let ticketHTML = `
+            <div class="message bot" style="width: 100%; max-width: 100%; background: none; padding: 0;">
+                <div class="ticket-box">
+                    <h3 style="margin-bottom:10px;">🎫 PHIẾU ĐẶT MÓN: #${ticketNum}</h3>
+                    
+                    ${paymentInstructionUI}
+
+                    <div style="text-align: left; padding: 15px; background: white; border-radius: 8px; font-size: 14px;">
+                        <div><strong>Khách hàng:</strong> ${customerName}</div>
+                        <div><strong>Tổng số lượng:</strong> ${totalItems} món</div>
+                        <div style="border-top: 1px solid #ddd; margin: 10px 0;"></div>
+                        ${itemsHTML}
+                        <div style="border-top: 1px dashed #000; margin: 15px 0 10px 0;"></div>
+                        
+                        <!-- Hiển thị VAT trên Bill -->
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Tạm tính:</span>
+                            <span>${formatMoney(subtotal)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span>Thuế VAT (10%):</span>
+                            <span>${formatMoney(vat)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; color: #dc3545; border-top: 1px solid #ddd; padding-top: 10px;">
+                            <span>TỔNG CỘNG:</span>
+                            <span>${formatMoney(totalAmount)}</span>
+                        </div>
+                    </div>
+                    <p style="margin-top: 15px; font-size: 14px;"><em>Đơn hàng đã được lưu. Chúc bạn có một bữa ăn ngon miệng!</em></p>
+                </div>
+            </div>
+        `;
+        
+        chat.insertAdjacentHTML('beforeend', ticketHTML);
+        scrollToBottom();
+        
+        // Làm trống giỏ hàng sau khi chốt
+        orderCart = {};
+        updateCartUI();
+    }
+
+    function removeButtons() {
+        const btns = document.getElementById('interactive-buttons');
+        if (btns) btns.remove();
+    }
+</script>
+
+</body>
+</html>
